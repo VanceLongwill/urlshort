@@ -3,16 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"os"
 
 	".."
 )
 
 func main() {
 
-	// yamlFilename := flag.String("f", "mock.yaml", "yaml file")
-	// flag.Parse()
+	yamlFilename := flag.String("f", "mock.yaml", "yaml file")
+	flag.Parse()
 
 	mux := defaultMux()
 
@@ -22,21 +22,23 @@ func main() {
 		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
 	}
 	mapHandler := urlshort.MapHandler(pathsToUrls, mux)
-	fmt.Println(mapHandler)
 
 	// Build the YAMLHandler using the mapHandler as the
 	// fallback
-	// file, err = os.Open(*yamlFilename)
-	// if fileErr != nil {
-	// 	fmt.Print(fileErr, "\nFailed to read the YAML file provided")
-	// 	os.Exit(1)
-	// }
-	// yamlHandler, err := urlshort.YAMLHandler([]byte(yaml), mapHandler)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println("Starting the server on :8080")
-	// http.ListenAndServe(":8080", yamlHandler)
+	file, err := ioutil.ReadFile(*yamlFilename)
+	if err != nil {
+		fmt.Print(err, "\nFailed to read the YAML file provided")
+		return
+	}
+
+	yamlHandler, yamlErr := urlshort.YAMLHandler([]byte(file), mapHandler)
+
+	if yamlErr != nil {
+		panic(yamlErr)
+	}
+
+	fmt.Println("Starting the server on :8080")
+	http.ListenAndServe(":8080", yamlHandler)
 }
 
 func defaultMux() *http.ServeMux {
